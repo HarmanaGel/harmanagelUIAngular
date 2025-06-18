@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: harmanagel-ui-service
+  namespace: harmanagel
+spec:
+  selector:
+    app: harmanagel-ui
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
