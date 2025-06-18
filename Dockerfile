@@ -15,12 +15,11 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Production stage
+# Production stage - Sadece dosyalar
+FROM scratch
 
 # Copy built application
-COPY --from=build /app/dist/amazon-frontend
+COPY --from=build /app/dist/amazon-frontend /app/
 
-# Expose port
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+# Bu container'da web server yok, sadece dosyalar var
+# Kubernetes'te kendi web server'ınızla mount edebilirsiniz
