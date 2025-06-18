@@ -21,12 +21,12 @@
     >
       <!-- Carousel wrapper -->
       <div class="relative h-56 overflow-hidden rounded-lg sm:h-96">
-        @for (productOffer of productOffers$ | async; track productOffer.id) {
+        @for (category of categories$ | async; track category.id) {
         <div
           class="mt-8 sm:mt-28 lg:mt-24 hidden duration-700 ease-in-out"
           data-carousel-item
         >
-          <app-product-offer [product]="productOffer" />
+          <app-category-card [category]="category" />
         </div>
         }
       </div>

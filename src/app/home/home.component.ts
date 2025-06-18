@@ -1,35 +1,40 @@
-import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, AfterViewInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { ProductOfferComponent } from '../shared/components/product-offer/product-offer.component';
 import { Product } from '../shared/models/product';
 import { HomeProductComponent } from './components/home-product/home-product.component';
 import { ProductService } from '../core/services/product.service';
 import { AsyncPipe } from '@angular/common';
-import { Observable, tap } from 'rxjs';
+import { Observable, Subject, takeUntil, tap } from 'rxjs';
+import { CategoryService } from '../core/services/category.service';
+import { Category } from '../shared/models/category';
+import { CategoryCardComponent } from '../caregory/category-card.component';
 import { initFlowbite } from 'flowbite';
 
 @Component({
   selector: 'app-home',
-  imports: [ProductOfferComponent, HomeProductComponent, AsyncPipe],
+  imports: [HomeProductComponent, AsyncPipe, CategoryCardComponent],
   templateUrl: './home.component.html',
 })
 export class HomeComponent implements OnInit {
   productService = inject(ProductService);
+  private categoryService = inject(CategoryService);
   cdr = inject(ChangeDetectorRef);
 
   products$: Observable<Product[]> = this.productService.getAll();
-  productOffers$: Observable<Product[]>;
-
-  private offersLoaded = false;
-  private flowbiteInitialized = false;
+  categories$: Observable<Category[]>;
+  categoriesLoaded = false;
+  currentCategoryIndex = 0;
+  autoSlideInterval?: number;
+  flowbiteInitialized = false;
 
   constructor() {
-    this.productOffers$ = this.productService.getOffers().pipe(
-      tap((offers) => {
-        if (offers && offers.length > 0) {
-          this.offersLoaded = true;
+    this.categories$ = this.categoryService.getMainCategories().pipe(
+      tap((categories) => {
+        if (categories && categories.length > 0) {
+          this.categoriesLoaded = true;
           setTimeout(() => this.initializeFlowbite(), 0);
         }
-      })
+      }),
     );
   }
 
