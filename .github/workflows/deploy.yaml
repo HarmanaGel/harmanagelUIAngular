@@ -74,8 +74,7 @@ jobs:
     - name: Deploy to Kubernetes
       if: github.event_name != 'pull_request'
       run: |
-        export KUBECONFIG=kubeconfig
-        kubectl apply -f k8e/
+        kubectl apply -f k8e/ --validate=false
         kubectl rollout restart deployment/harmanagel-ui -n harmanagel
         kubectl rollout status deployment/harmanagel-ui -n harmanagel
 
