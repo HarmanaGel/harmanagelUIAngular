@@ -18,7 +18,7 @@ RUN npm run build
 # Production stage
 
 # Copy built application
-COPY --from=build /app/dist/amazon-frontend /usr/share/nginx/html
+COPY --from=build /app/dist/amazon-frontend
 
 # Expose port
 EXPOSE 80
