@@ -16,10 +16,6 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM nginx:alpine
-
-# Copy custom nginx config
-COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copy built application
 COPY --from=build /app/dist/amazon-frontend /usr/share/nginx/html
