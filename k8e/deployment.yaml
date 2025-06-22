@@ -5,24 +5,19 @@ metadata:
   namespace: harmanagel
 spec:
   replicas: 1
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
-  progressDeadlineSeconds: 600
   selector:
     matchLabels:
       app: harmanagel-ui
+      version: v1
   template:
     metadata:
       labels:
         app: harmanagel-ui
+        version: v1
     spec:
-      imagePullSecrets:
-      - name: regcred
       containers:
         - name: harmanagel-ui
           image: harmanagel/harmanagel-ui:latest
           ports:
-            - containerPort: 80
+            - containerPort: 3031
+          imagePullPolicy: Always

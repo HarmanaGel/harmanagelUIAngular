@@ -1,0 +1,174 @@
+<div class="container mx-auto px-4 py-8">
+  <div class="max-w-2xl mx-auto">
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">Yeni Açık Arttırma Oluştur</h1>
+      <p class="text-gray-600">Açık arttırma detaylarını doldurun</p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+      <form (ngSubmit)="onSubmit()" #auctionForm="ngForm">
+        <!-- Title -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Başlık *
+          </label>
+          <input
+            type="text"
+            [(ngModel)]="auction.title"
+            name="title"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Açık arttırma başlığı">
+        </div>
+
+        <!-- Description -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Açıklama *
+          </label>
+          <textarea
+            [(ngModel)]="auction.description"
+            name="description"
+            required
+            rows="4"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Açık arttırma açıklaması"></textarea>
+        </div>
+
+        <!-- Price Fields -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Başlangıç Fiyatı (₺) *
+            </label>
+            <input
+              type="number"
+              [(ngModel)]="auction.startingPrice"
+              name="startingPrice"
+              required
+              min="1"
+              step="1"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Minimum Artış (₺) *
+            </label>
+            <input
+              type="number"
+              [(ngModel)]="auction.minimumBidIncrement"
+              name="minimumBidIncrement"
+              required
+              min="1"
+              step="1"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+
+        <!-- Date Fields -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Başlangıç Zamanı *
+            </label>
+            <input
+              type="datetime-local"
+              [value]="formatDateTime(auction.startTime)"
+              (change)="onStartTimeChange($event)"
+              name="startTime"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Bitiş Zamanı *
+            </label>
+            <input
+              type="datetime-local"
+              [value]="formatDateTime(auction.endTime)"
+              (change)="onEndTimeChange($event)"
+              name="endTime"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+
+        <!-- Product Type -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Ürün Tipi *
+          </label>
+          <select
+            [(ngModel)]="auction.productType"
+            name="productType"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option [value]="AuctionProductType.Animal">Hayvan</option>
+            <option [value]="AuctionProductType.OrganicProduct">Organik Ürün</option>
+          </select>
+        </div>
+
+        <!-- Auto Extension -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Otomatik Uzatma (Dakika)
+          </label>
+          <input
+            type="number"
+            [(ngModel)]="auction.autoExtensionMinutes"
+            name="autoExtensionMinutes"
+            min="0"
+            max="60"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Son dakikada teklif gelirse uzatılacak süre">
+          <p class="text-sm text-gray-500 mt-1">
+            Bitiş saatinden önce son X dakikada teklif gelirse açık arttırma bu kadar dakika uzar
+          </p>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="error" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+          <p class="text-sm text-red-600">{{error}}</p>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex justify-between items-center">
+          <button
+            type="button"
+            (click)="router.navigate(['/auction'])"
+            class="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500">
+            İptal
+          </button>
+
+          <button
+            type="submit"
+            [disabled]="loading || !auctionForm.valid"
+            class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+
+            <span *ngIf="!loading">Açık Arttırma Oluştur</span>
+            <span *ngIf="loading" class="flex items-center">
+              <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Oluşturuluyor...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Info Card -->
+    <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <h3 class="text-sm font-medium text-blue-800 mb-2">📝 Önemli Notlar</h3>
+      <ul class="text-sm text-blue-700 space-y-1">
+        <li>• Açık arttırma oluşturduktan sonra admin onayı bekleyecektir</li>
+        <li>• Başlangıç zamanı geldiğinde açık arttırma otomatik olarak başlar</li>
+        <li>• Son dakikada teklif gelirse otomatik uzatma devreye girer</li>
+        <li>• Minimum artış miktarı her teklif için geçerlidir</li>
+      </ul>
+    </div>
+  </div>
+</div>
