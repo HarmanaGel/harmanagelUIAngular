@@ -17,7 +17,7 @@ WORKDIR /app
 RUN npm install -g http-server
 
 # Angular build çıktısını kopyala
-COPY --from=build /app/dist/amazon-frontend ./
+COPY --from=build /app/dist/amazon-frontend/browser .
 
 # Container başlarken Angular'ı 80. portta sun
 EXPOSE 3000
