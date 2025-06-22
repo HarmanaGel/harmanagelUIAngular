@@ -6,7 +6,7 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies (devDependencies needed for build)
+# Install ALL dependencies
 RUN npm ci
 
 # Copy source code
@@ -15,7 +15,7 @@ COPY . .
 # Build the application for production
 RUN npm run build -- --configuration production
 
-# Production stage - Simple Node.js server
+# Production stage
 FROM node:18-alpine
 
 WORKDIR /app
@@ -26,8 +26,8 @@ RUN npm install -g serve
 # Copy built application
 COPY --from=build /app/dist/amazon-frontend ./
 
-# Expose port 3000
+# Expose port
 EXPOSE 3000
 
-# Serve the application
-CMD ["serve", "-s", ".", "-l", "3000"]
+# Serve with SPA support (-s flag for Single Page Application)
+CMD ["serve", "-s", ".", "-l", "3000", "-n"]
