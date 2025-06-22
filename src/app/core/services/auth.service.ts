@@ -115,7 +115,7 @@ register(userData: RegisterRequest): Observable<any> {
   loginWithPassword(credentials: LoginRequest): Observable<any> {
     const body = new URLSearchParams();
     body.set('grant_type', 'password');
-    body.set('client_id', 'HarmanaGel_Swagger_Ui');
+    body.set('client_id', environment.oauth.clientId);
     body.set('username', credentials.email);
     body.set('password', credentials.password);
     body.set('scope', environment.oauth.scope);
