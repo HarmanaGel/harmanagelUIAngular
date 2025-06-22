@@ -3,14 +3,14 @@
   <div class="mb-6">
     <div class="flex justify-between items-start mb-4">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{auctionDetail.auction.title}}</h1>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{auctionDetail.title}}</h1>
         <div class="flex items-center space-x-4">
           <span
             class="inline-flex px-3 py-1 text-sm font-semibold rounded-full"
-            [class]="getStatusClass(auctionDetail.auction.status)">
-            {{getStatusText(auctionDetail.auction.status)}}
+            [class]="getStatusClass(auctionDetail.status)">
+            {{getStatusText(auctionDetail.status)}}
           </span>
-          <span class="text-sm text-gray-600">{{getProductTypeText(auctionDetail.auction.productType)}}</span>
+          <span class="text-sm text-gray-600">{{getProductTypeText(auctionDetail.productType)}}</span>
         </div>
       </div>
 
@@ -44,27 +44,27 @@
             <svg class="w-16 h-16 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
             </svg>
-            <p class="text-lg">{{getProductTypeText(auctionDetail.auction.productType)}}</p>
+            <p class="text-lg">{{getProductTypeText(auctionDetail.productType)}}</p>
           </div>
         </div>
 
         <h3 class="text-lg font-semibold text-gray-900 mb-3">Açıklama</h3>
-        <p class="text-gray-700 leading-relaxed">{{auctionDetail.auction.description}}</p>
+        <p class="text-gray-700 leading-relaxed">{{auctionDetail.description}}</p>
       </div>
 
       <!-- Bid History -->
       <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">
-          Teklif Geçmişi ({{auctionDetail.bids.length}})
+          Teklif Geçmişi ({{auctionDetail.recentBids.length}})
         </h3>
 
-        <div *ngIf="auctionDetail.bids.length === 0" class="text-center py-8 text-gray-500">
+        <div *ngIf="auctionDetail.recentBids.length === 0" class="text-center py-8 text-gray-500">
           Henüz teklif verilmedi
         </div>
 
-        <div *ngIf="auctionDetail.bids.length > 0" class="space-y-3 max-h-96 overflow-y-auto">
+        <div *ngIf="auctionDetail.recentBids.length > 0" class="space-y-3 max-h-96 overflow-y-auto">
           <div
-            *ngFor="let bid of auctionDetail.bids; trackBy: trackByBidId"
+            *ngFor="let bid of auctionDetail.recentBids; trackBy: trackByBidId"
             class="flex justify-between items-center p-3 border border-gray-200 rounded-lg"
             [class.bg-green-50]="bid.isWinningBid"
             [class.border-green-300]="bid.isWinningBid">
@@ -95,10 +95,10 @@
         <div class="text-center mb-6">
           <h3 class="text-lg font-semibold text-gray-700 mb-2">Mevcut Fiyat</h3>
           <p class="text-4xl font-bold text-green-600 mb-1">
-            {{formatPrice(auctionDetail.auction.currentPrice)}}
+            {{formatPrice(auctionDetail.currentPrice)}}
           </p>
           <p class="text-sm text-gray-600">
-            Başlangıç: {{formatPrice(auctionDetail.auction.startingPrice)}}
+            Başlangıç: {{formatPrice(auctionDetail.startingPrice)}}
           </p>
         </div>
 
@@ -114,32 +114,32 @@
         <div class="grid grid-cols-2 gap-4 text-sm text-gray-600">
           <div>
             <span class="block font-medium">Toplam Teklif</span>
-            <span class="text-lg font-semibold text-blue-600">{{auctionDetail.auction.totalBids}}</span>
+            <span class="text-lg font-semibold text-blue-600">{{auctionDetail.totalBids}}</span>
           </div>
           <div>
             <span class="block font-medium">Min. Artış</span>
-            <span class="text-lg font-semibold text-blue-600">{{formatPrice(auctionDetail.auction.minimumBidIncrement)}}</span>
+            <span class="text-lg font-semibold text-blue-600">{{formatPrice(auctionDetail.minimumBidIncrement)}}</span>
           </div>
         </div>
       </div>
 
       <!-- Bidding Form -->
       <div
-        *ngIf="auctionDetail.canBid && auctionDetail.auction.status === AuctionStatus.Active"
+        *ngIf="auctionDetail.status === AuctionStatus.Active"
         class="bg-white rounded-lg shadow p-6">
 
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Teklif Ver</h3>
 
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">
-            Teklif Miktarı (Min: {{formatPrice(auctionDetail.nextMinimumBid)}})
+            Teklif Miktarı (Min: {{formatPrice(getNextMinimumBid())}})
           </label>
           <input
             type="number"
             [(ngModel)]="bidAmount"
             (input)="onBidAmountChange()"
-            [min]="auctionDetail.nextMinimumBid"
-            step="{{auctionDetail.auction.minimumBidIncrement}}"
+            [min]="getNextMinimumBid()"
+            step="{{auctionDetail.minimumBidIncrement}}"
             class="w-full px-3 py-3 text-lg border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             [class.border-red-300]="bidError"
             [disabled]="placingBid">
@@ -158,22 +158,40 @@
             Minimum
           </button>
           <button
-            (click)="setQuickBid(auctionDetail.auction.minimumBidIncrement)"
+            (click)="setQuickBid(auctionDetail.minimumBidIncrement)"
             class="px-3 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
             [disabled]="placingBid">
-            +{{formatPrice(auctionDetail.auction.minimumBidIncrement)}}
+            +{{formatPrice(auctionDetail.minimumBidIncrement)}}
           </button>
           <button
-            (click)="setQuickBid(auctionDetail.auction.minimumBidIncrement * 2)"
+            (click)="setQuickBid(auctionDetail.minimumBidIncrement * 2)"
             class="px-3 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
             [disabled]="placingBid">
-            +{{formatPrice(auctionDetail.auction.minimumBidIncrement * 2)}}
+            +{{formatPrice(auctionDetail.minimumBidIncrement * 2)}}
           </button>
+        </div>
+
+        <!-- Notes Field -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Not (Opsiyonel)
+          </label>
+          <textarea
+            [(ngModel)]="bidNotes"
+            placeholder="Teklifiniz hakkında not ekleyebilirsiniz..."
+            rows="3"
+            maxlength="500"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            [disabled]="placingBid"></textarea>
+          <div class="flex justify-between mt-1">
+            <span class="text-xs text-gray-500">Teklifinizle birlikte görüntülenecek</span>
+            <span class="text-xs text-gray-400">{{(bidNotes || '').length}}/500</span>
+          </div>
         </div>
 
         <button
           (click)="placeBid()"
-          [disabled]="placingBid || bidAmount < auctionDetail.nextMinimumBid || !!bidError"
+          [disabled]="placingBid || bidAmount < getNextMinimumBid() || !!bidError"
           class="w-full bg-blue-600 text-white py-3 px-4 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
 
           <span *ngIf="!placingBid">Teklif Ver</span>
@@ -187,28 +205,15 @@
         </button>
       </div>
 
-      <!-- Not Eligible to Bid -->
-      <div
-        *ngIf="!auctionDetail.canBid && auctionDetail.auction.status === AuctionStatus.Active"
-        class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-        <div class="text-center">
-          <svg class="w-12 h-12 mx-auto text-yellow-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-          </svg>
-          <h3 class="text-lg font-medium text-yellow-800 mb-2">Teklif Veremezsiniz</h3>
-          <p class="text-sm text-yellow-700">Bu açık arttırmaya teklif vermek için gerekli koşulları sağlamıyorsunuz.</p>
-        </div>
-      </div>
-
       <!-- Auction Ended -->
       <div
-        *ngIf="auctionDetail.auction.status !== AuctionStatus.Active"
+        *ngIf="auctionDetail.status !== AuctionStatus.Active"
         class="bg-gray-50 border border-gray-200 rounded-lg p-6">
         <div class="text-center">
-          <h3 class="text-lg font-medium text-gray-800 mb-2">Açık Arttırma {{getStatusText(auctionDetail.auction.status)}}</h3>
-          <p *ngIf="auctionDetail.auction.status === AuctionStatus.Completed && auctionDetail.auction.winningBidId"
+          <h3 class="text-lg font-medium text-gray-800 mb-2">Açık Arttırma {{getStatusText(auctionDetail.status)}}</h3>
+          <p *ngIf="auctionDetail.status === AuctionStatus.Completed && auctionDetail.winningBidId"
              class="text-sm text-gray-600">
-            Kazanan teklif: {{formatPrice(auctionDetail.auction.currentPrice)}}
+            Kazanan teklif: {{formatPrice(auctionDetail.currentPrice)}}
           </p>
         </div>
       </div>
@@ -220,23 +225,23 @@
         <div class="space-y-3 text-sm">
           <div class="flex justify-between">
             <span class="text-gray-600">Başlangıç:</span>
-            <span class="font-medium">{{formatDateTime(auctionDetail.auction.startTime)}}</span>
+            <span class="font-medium">{{formatDateTime(auctionDetail.startTime)}}</span>
           </div>
           <div class="flex justify-between">
             <span class="text-gray-600">Bitiş:</span>
-            <span class="font-medium">{{formatDateTime(auctionDetail.auction.endTime)}}</span>
+            <span class="font-medium">{{formatDateTime(auctionDetail.endTime)}}</span>
           </div>
           <div class="flex justify-between">
             <span class="text-gray-600">Otomatik Uzatma:</span>
-            <span class="font-medium">{{auctionDetail.auction.autoExtensionMinutes}} dakika</span>
+            <span class="font-medium">{{auctionDetail.autoExtensionMinutes}} dakika</span>
           </div>
           <div class="flex justify-between">
             <span class="text-gray-600">Ürün Tipi:</span>
-            <span class="font-medium">{{getProductTypeText(auctionDetail.auction.productType)}}</span>
+            <span class="font-medium">{{getProductTypeText(auctionDetail.productType)}}</span>
           </div>
           <div class="flex justify-between">
             <span class="text-gray-600">Oluşturulma:</span>
-            <span class="font-medium">{{formatDateTime(auctionDetail.auction.creationTime)}}</span>
+            <span class="font-medium">{{formatDateTime(auctionDetail.creationTime)}}</span>
           </div>
         </div>
       </div>
