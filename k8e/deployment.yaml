@@ -5,19 +5,46 @@ metadata:
   namespace: harmanagel
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  progressDeadlineSeconds: 600
   selector:
     matchLabels:
       app: harmanagel-ui
-      version: v1
   template:
     metadata:
       labels:
         app: harmanagel-ui
-        version: v1
     spec:
       containers:
         - name: harmanagel-ui
           image: harmanagel/harmanagel-ui:latest
           ports:
-            - containerPort: 3031
+            - containerPort: 3000
           imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
