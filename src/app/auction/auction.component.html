@@ -1,0 +1,177 @@
+<div class="container mx-auto px-4 py-8">
+  <!-- Header -->
+  <div class="mb-8">
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-3xl font-bold text-gray-900">Canlı Açık Arttırmalar</h1>
+      <div class="flex items-center space-x-4">
+        <!-- Create Auction Button -->
+        <a *ngIf="authService.isAuthenticated()"
+          routerLink="/auction/create"
+          class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors duration-200">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          Açık Arttırma Oluştur
+        </a>
+
+        <!-- Connection Status -->
+        <div class="flex items-center space-x-2">
+          <span class="text-sm text-gray-600">Bağlantı:</span>
+          <span
+            class="px-2 py-1 rounded-full text-xs font-medium"
+            [class]="connectionStatus === 'Connected' ? 'bg-green-100 text-green-800' :
+                     connectionStatus === 'Reconnecting' ? 'bg-yellow-100 text-yellow-800' :
+                     'bg-red-100 text-red-800'">
+            {{connectionStatus}}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex flex-wrap gap-4 bg-white p-4 rounded-lg shadow">
+      <div class="flex-1 min-w-60">
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (keyup.enter)="onSearch()"
+          placeholder="Açık arttırma ara..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <div class="min-w-40">
+        <select
+          [(ngModel)]="selectedStatus"
+          (change)="onFilterChange()"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option [ngValue]="undefined">Tüm Durumlar</option>
+          <option [ngValue]="AuctionStatus.Active">Aktif</option>
+          <option [ngValue]="AuctionStatus.Pending">Beklemede</option>
+          <option [ngValue]="AuctionStatus.Completed">Tamamlandı</option>
+        </select>
+      </div>
+
+      <div class="min-w-40">
+        <select
+          [(ngModel)]="selectedProductType"
+          (change)="onFilterChange()"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option [ngValue]="undefined">Tüm Türler</option>
+          <option [ngValue]="AuctionProductType.Animal">Hayvan</option>
+          <option [ngValue]="AuctionProductType.OrganicProduct">Organik Ürün</option>
+        </select>
+      </div>
+
+      <button
+        (click)="onSearch()"
+        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        Ara
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="flex justify-center items-center py-12">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+
+  <!-- Auction Grid -->
+  <div *ngIf="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div
+      *ngFor="let auction of auctions"
+      class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-200">
+
+      <!-- Product Image Placeholder -->
+      <div class="h-48 bg-gray-200 rounded-t-lg flex items-center justify-center">
+        <div class="text-center text-gray-500">
+          <svg class="w-12 h-12 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+          </svg>
+          <p class="text-sm">{{getProductTypeText(auction.productType)}}</p>
+        </div>
+      </div>
+
+      <div class="p-4">
+        <!-- Title and Status -->
+        <div class="mb-3">
+          <h3 class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{{auction.title}}</h3>
+          <span
+            class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+            [class]="getStatusClass(auction.status)">
+            {{getStatusText(auction.status)}}
+          </span>
+        </div>
+
+        <!-- Price Info -->
+        <div class="mb-4">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-sm text-gray-600">Mevcut Fiyat:</span>
+            <span class="text-lg font-bold text-green-600">{{formatPrice(auction.currentPrice)}}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-gray-600">Başlangıç:</span>
+            <span class="text-sm text-gray-900">{{formatPrice(auction.startingPrice)}}</span>
+          </div>
+        </div>
+
+        <!-- Time and Bids -->
+        <div class="mb-4">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-sm text-gray-600">Kalan Süre:</span>
+            <span
+              class="text-sm font-medium"
+              [class]="getRemainingTime(auction.endTime) === 'Bitti' ? 'text-red-600' : 'text-orange-600'">
+              {{getRemainingTime(auction.endTime)}}
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-gray-600">Toplam Teklif:</span>
+            <span class="text-sm font-medium text-blue-600">{{auction.totalBids}}</span>
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="pt-3 border-t border-gray-200">
+          <button
+            [routerLink]="['/auction', auction.id]"
+            class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
+            <span *ngIf="auction.status === AuctionStatus.Active">Teklif Ver</span>
+            <span *ngIf="auction.status !== AuctionStatus.Active">Detayları Gör</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && auctions.length === 0" class="text-center py-12">
+    <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <h3 class="text-lg font-medium text-gray-900 mb-2">Açık arttırma bulunamadı</h3>
+    <p class="text-gray-500">Arama kriterlerinizi değiştirerek tekrar deneyin.</p>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="!loading && totalCount > pageSize" class="mt-8 flex justify-center">
+    <nav class="flex items-center space-x-2">
+      <button
+        (click)="onPageChange(currentPage - 1)"
+        [disabled]="currentPage === 1"
+        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+        Önceki
+      </button>
+
+      <span class="px-4 py-2 text-sm text-gray-700">
+        Sayfa {{currentPage}} / {{Math.ceil(totalCount / pageSize)}}
+      </span>
+
+      <button
+        (click)="onPageChange(currentPage + 1)"
+        [disabled]="currentPage >= Math.ceil(totalCount / pageSize)"
+        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+        Sonraki
+      </button>
+    </nav>
+  </div>
+</div>

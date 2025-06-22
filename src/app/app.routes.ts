@@ -6,6 +6,9 @@ import { PaymentSuccessComponent } from './payment/payment-success/payment-succe
 import { authGuard, guestGuard } from './guard/auth.guard';
 import { LoginComponent } from './login/login.component';
 import { RegisterComponent } from './login/register.component';
+import { AuctionComponent } from './auction/auction.component';
+import { AuctionDetailComponent } from './auction/auction-detail/auction-detail.component';
+import { AuctionCreateComponent } from './auction/auction-create/auction-create.component';
 
 export const routes: Routes = [
   {
@@ -35,5 +38,18 @@ export const routes: Routes = [
     path: 'register',
     component: RegisterComponent,
     canActivate: [guestGuard] // Sadece giriş yapmamış kullanıcılar
+  },
+  {
+    path: 'auction',
+    component: AuctionComponent,
+  },
+  {
+    path: 'auction/create',
+    component: AuctionCreateComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'auction/:id',
+    component: AuctionDetailComponent,
   },
 ];
