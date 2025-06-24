@@ -31,7 +31,6 @@ export class AuthService {
     responseType: environment.oauth.responseType,
     requireHttps: environment.oauth.requireHttps,
     showDebugInformation: !environment.production,
-    secret: environment.oauth.secret,
 
     // ABP Framework endpoint'leri
     loginUrl: `${environment.oauth.issuer}/connect/authorize`,
