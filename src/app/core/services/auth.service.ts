@@ -180,7 +180,6 @@ register(userData: RegisterRequest): Observable<any> {
         return false;
       }
     }
-
     return false;
   }
 
