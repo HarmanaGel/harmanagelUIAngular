@@ -8,6 +8,7 @@ export const environment = {
     postLogoutRedirectUri: 'http://localhost:4200',
     scope: 'openid profile email phone roles HarmanaGel',
     responseType: 'code',
-    requireHttps: false // Development için
+    requireHttps: false, // Development için
+    secret: 'SuperGizliClientSecret123!'
   }
 };

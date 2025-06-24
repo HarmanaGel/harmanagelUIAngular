@@ -3,11 +3,12 @@ export const environment = {
   apiUrl: 'https://api.harmanagel.com', // Production backend URL
   oauth: {
     issuer: 'https://api.harmanagel.com',
-    clientId: 'HarmanaGel_Swagger_Ui',
+    clientId: 'Harmanagel_Production_Ui',
     redirectUri: 'https://harmanagel.com',
     postLogoutRedirectUri: 'https://harmanagel.com',
     scope: 'openid profile email phone roles HarmanaGel',
     responseType: 'code',
-    requireHttps: true // Production için HTTPS zorunlu
+    requireHttps: false,
+    secret: 'SuperGizliClientSecret123!' // Production için HTTPS zorunlu
   }
 };

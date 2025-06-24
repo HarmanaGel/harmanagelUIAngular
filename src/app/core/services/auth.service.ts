@@ -31,6 +31,7 @@ export class AuthService {
     responseType: environment.oauth.responseType,
     requireHttps: environment.oauth.requireHttps,
     showDebugInformation: !environment.production,
+    secret: environment.oauth.secret,
 
     // ABP Framework endpoint'leri
     loginUrl: `${environment.oauth.issuer}/connect/authorize`,
@@ -75,6 +76,7 @@ register(userData: RegisterRequest): Observable<any> {
   body.set('username', userData.email);
   body.set('password', userData.password);
   body.set('scope', environment.oauth.scope);
+  body.set('client_secret', environment.oauth.secret);
 
   // Önce kullanıcı kaydetme isteği yap (ABP'nin register endpoint'i)
   const registerData = {
@@ -119,6 +121,7 @@ register(userData: RegisterRequest): Observable<any> {
     body.set('username', credentials.email);
     body.set('password', credentials.password);
     body.set('scope', environment.oauth.scope);
+    body.set('client_secret', environment.oauth.secret);
 
     return this.http.post<any>(`${environment.oauth.issuer}/connect/token`, body.toString(), {
       headers: {
