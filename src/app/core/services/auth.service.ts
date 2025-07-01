@@ -114,7 +114,6 @@ register(userData: RegisterRequest): Observable<any> {
   );
 }
 
-  // Method 2: Password Grant (Kullanıcı adı/şifre ile direkt)
   loginWithPassword(credentials: LoginRequest): Observable<any> {
     const body = new URLSearchParams();
     body.set('grant_type', 'password');
