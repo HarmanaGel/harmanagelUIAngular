@@ -87,7 +87,6 @@ register(userData: RegisterRequest): Observable<any> {
   };
 
   return this.http.post<any>(`${environment.apiUrl}/api/account/register`, registerData, {
-    withCredentials: true
   }).pipe(
     map(async (registerResponse) => {
       // Kayıt başarılıysa otomatik login yap
@@ -127,7 +126,6 @@ register(userData: RegisterRequest): Observable<any> {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      withCredentials: true
     }).pipe(
       map(async (tokenResponse) => {
         // Token'ları manuel olarak kaydet
