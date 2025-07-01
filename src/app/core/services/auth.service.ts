@@ -85,15 +85,17 @@ register(userData: RegisterRequest): Observable<any> {
     surname: userData.lastName
   };
 
-  return this.http.post<any>(`${environment.apiUrl}/api/account/register`, registerData).pipe(
+  return this.http.post<any>(`${environment.apiUrl}/api/account/register`, registerData, {
+    withCredentials: true
+  }).pipe(
     map(async (registerResponse) => {
       // Kayıt başarılıysa otomatik login yap
-      const loginResponse = await this.http.post<any>(`${environment.oauth.issuer}/connect/token`,
+              const loginResponse = await this.http.post<any>(`${environment.oauth.issuer}/connect/token`,
         body.toString(),
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-          }
+          },
         }
       ).toPromise();
 
@@ -123,7 +125,8 @@ register(userData: RegisterRequest): Observable<any> {
     return this.http.post<any>(`${environment.oauth.issuer}/connect/token`, body.toString(), {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-      }
+      },
+      withCredentials: true
     }).pipe(
       map(async (tokenResponse) => {
         // Token'ları manuel olarak kaydet
