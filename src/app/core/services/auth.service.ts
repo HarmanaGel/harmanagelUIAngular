@@ -75,7 +75,6 @@ register(userData: RegisterRequest): Observable<any> {
   body.set('username', userData.email);
   body.set('password', userData.password);
   body.set('scope', environment.oauth.scope);
-  body.set('client_secret', environment.oauth.secret);
 
   // Önce kullanıcı kaydetme isteği yap (ABP'nin register endpoint'i)
   const registerData = {

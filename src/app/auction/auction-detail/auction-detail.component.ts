@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Input } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -45,7 +45,9 @@ export class AuctionDetailComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     public router: Router,
     private auctionService: AuctionService,
-    private hubService: AuctionHubService
+    private hubService: AuctionHubService,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -65,13 +67,13 @@ export class AuctionDetailComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
     this.timer$.next();
     this.timer$.complete();
-    this.hubService.leaveAuctionGroup(this.id);
+    this.hubService.leaveAuction(this.id);
   }
 
   private async initializeSignalR(): Promise<void> {
     try {
       await this.hubService.startConnection();
-      await this.hubService.joinAuctionGroup(this.id);
+      await this.hubService.joinAuction(this.id);
 
       this.hubService.connectionState$
         .pipe(takeUntil(this.destroy$))
@@ -85,47 +87,145 @@ export class AuctionDetailComponent implements OnInit, OnDestroy {
 
   private setupHubEvents(): void {
     // Yeni teklif geldiğinde
-    this.hubService.bidPlaced$
+    this.hubService.newBid$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(bid => {
-        if (bid && bid.auctionId === this.id && this.auctionDetail) {
-          this.auctionDetail.recentBids.unshift(bid);
-          this.auctionDetail.currentPrice = bid.bidAmount;
-          this.auctionDetail.totalBids++;
-          this.bidAmount = bid.bidAmount + this.auctionDetail.minimumBidIncrement;
+      .subscribe((bidData: any) => {
+                if (bidData && bidData.auctionId === this.id && this.auctionDetail) {
+          this.ngZone.run(() => {
+            // Create bid object for UI
+            const newBid: AuctionBidDto = {
+              id: bidData.bidId || '',
+              auctionId: bidData.auctionId || '',
+              bidderId: bidData.bidderId || '',
+              bidderUserName: bidData.bidderName || 'Anonim',
+              bidAmount: bidData.bidAmount || 0,
+              bidTime: bidData.bidTime ? new Date(bidData.bidTime) : new Date(),
+              isWinningBid: bidData.isWinning || false,
+              isAutoBid: false,
+              notes: bidData.notes || ''
+            };
+
+            this.auctionDetail!.recentBids.unshift(newBid);
+            this.auctionDetail!.currentPrice = bidData.bidAmount || 0;
+            this.auctionDetail!.totalBids++;
+            this.bidAmount = (bidData.bidAmount || 0) + this.auctionDetail!.minimumBidIncrement;
+
+            console.log('✅ UI güncellendi - Yeni bid:', bidData.bidAmount);
+            this.cdr.detectChanges();
+          });
         }
       });
 
     // Açık arttırma güncellendiğinde
     this.hubService.auctionUpdated$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(auction => {
+      .subscribe((auction: any) => {
         if (auction && auction.id === this.id && this.auctionDetail) {
-          // Update relevant fields
-          this.auctionDetail.currentPrice = auction.currentPrice;
-          this.auctionDetail.totalBids = auction.totalBids;
-          this.auctionDetail.status = auction.status;
+          this.ngZone.run(() => {
+            // Update relevant fields
+            this.auctionDetail!.currentPrice = auction.currentPrice || 0;
+            this.auctionDetail!.totalBids = auction.totalBids || 0;
+            this.auctionDetail!.status = auction.status;
+            this.auctionDetail!.endTime = auction.endTime ? new Date(auction.endTime) : this.auctionDetail!.endTime;
+
+            console.log('✅ UI güncellendi - Açık arttırma:', auction.currentPrice);
+            this.cdr.detectChanges();
+          });
         }
       });
 
     // Süre uzatıldığında
     this.hubService.timeExtended$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(event => {
-        if (event && event.auctionId === this.id && this.auctionDetail) {
-          this.auctionDetail.endTime = event.newEndTime;
+      .subscribe((data: any) => {
+        if (data && data.auctionId === this.id && this.auctionDetail) {
+          this.ngZone.run(() => {
+            this.auctionDetail!.endTime = new Date(data.newEndTime);
+            console.log('⏰ Açık arttırma süresi uzatıldı!');
+            this.cdr.detectChanges();
+          });
         }
       });
 
     // Açık arttırma bittiğinde
     this.hubService.auctionEnded$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(event => {
-        if (event && event.auctionId === this.id && this.auctionDetail) {
+      .subscribe((data: any) => {
+        if (data && data.AuctionId === this.id && this.auctionDetail) {
           this.auctionDetail.status = AuctionStatus.Completed;
-          if (event.winningBid) {
-            this.auctionDetail.winningBidId = event.winningBid.id;
+          if (data.WinningBid) {
+            this.auctionDetail.winningBidId = data.WinningBid.Id;
           }
+          console.log('🏁 Açık arttırma sona erdi!');
+        }
+      });
+
+    // Timer güncellemeleri
+    this.hubService.timerUpdate$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((data: any) => {
+        if (data && data.AuctionId === this.id) {
+          // Timer güncelleme - UI'da countdown'ı güncelle
+          this.auctionDetail!.remainingSeconds = data.RemainingSeconds;
+        }
+      });
+
+    // Açık arttırma onaylandığında
+    this.hubService.auctionApproved$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((data: any) => {
+        if (data && data.auctionId === this.id && this.auctionDetail) {
+          this.ngZone.run(() => {
+            // Status'u güncelle ve detayı yeniden yükle
+            this.loadAuctionDetail();
+            console.log('✅ Açık arttırma onaylandı!');
+          });
+        }
+      });
+
+    // Açık arttırma başladığında
+    this.hubService.auctionStarted$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((data: any) => {
+        if (data && data.auctionId === this.id && this.auctionDetail) {
+          this.ngZone.run(() => {
+            this.auctionDetail!.status = AuctionStatus.Active;
+            console.log('🎯 Açık arttırma başladı!');
+            this.cdr.detectChanges();
+          });
+        }
+      });
+
+    // Açık arttırma iptal edildiğinde
+    this.hubService.auctionCancelled$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((data: any) => {
+        if (data && data.auctionId === this.id && this.auctionDetail) {
+          this.ngZone.run(() => {
+            this.auctionDetail!.status = AuctionStatus.Cancelled;
+            console.log('❌ Açık arttırma iptal edildi!');
+            this.cdr.detectChanges();
+          });
+        }
+      });
+
+    // Genel status değişiklikleri
+    this.hubService.auctionStatusChanged$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((data: any) => {
+        if (data && data.AuctionId === this.id && this.auctionDetail) {
+          // Status değişikliklerinde detayı yeniden yükle
+          this.loadAuctionDetail();
+          console.log('📊 Açık arttırma durumu değişti:', data.Status);
+        }
+      });
+
+    // Hata mesajları
+    this.hubService.auctionError$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((data: any) => {
+        if (data && data.AuctionId === this.id) {
+          this.bidError = data.Message || 'Bir hata oluştu!';
         }
       });
   }

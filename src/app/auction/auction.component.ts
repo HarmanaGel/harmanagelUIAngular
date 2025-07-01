@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -36,7 +36,9 @@ export class AuctionComponent implements OnInit, OnDestroy {
   constructor(
     private auctionService: AuctionService,
     private hubService: AuctionHubService,
-    public authService: AuthService
+    public authService: AuthService,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -65,7 +67,16 @@ export class AuctionComponent implements OnInit, OnDestroy {
   }
 
   private setupHubEvents(): void {
-    // Açık arttırma güncellemeleri
+    // Yeni bid geldiğinde
+    this.hubService.newBid$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(bidData => {
+        if (bidData) {
+          this.handleNewBid(bidData.AuctionId, bidData.BidAmount);
+        }
+      });
+
+    // Açık arttırma güncellendiğinde
     this.hubService.auctionUpdated$
       .pipe(takeUntil(this.destroy$))
       .subscribe(auction => {
@@ -74,21 +85,66 @@ export class AuctionComponent implements OnInit, OnDestroy {
         }
       });
 
-    // Yeni teklifler
-    this.hubService.bidPlaced$
+    // Süre uzatıldığında
+    this.hubService.timeExtended$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(bid => {
-        if (bid) {
-          this.handleNewBid(bid.auctionId, bid.bidAmount);
+      .subscribe(data => {
+        if (data) {
+          this.handleTimeExtended(data.AuctionId, data.NewEndTime);
         }
       });
 
-    // Açık arttırma bitti
+    // Açık arttırma başladığında
+    this.hubService.auctionStarted$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => {
+        if (data) {
+          this.handleAuctionStarted(data.AuctionId);
+        }
+      });
+
+    // Açık arttırma bittiğinde
     this.hubService.auctionEnded$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(event => {
-        if (event) {
-          this.handleAuctionEnded(event.auctionId);
+      .subscribe(data => {
+        if (data) {
+          this.handleAuctionEnded(data.AuctionId);
+        }
+      });
+
+    // Açık arttırma onaylandığında
+    this.hubService.auctionApproved$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => {
+        if (data) {
+          this.handleAuctionApproved(data.AuctionId);
+        }
+      });
+
+    // Açık arttırma iptal edildiğinde
+    this.hubService.auctionCancelled$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => {
+        if (data) {
+          this.handleAuctionCancelled(data.AuctionId);
+        }
+      });
+
+    // Timer güncellemeleri
+    this.hubService.timerUpdate$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => {
+        if (data) {
+          this.handleTimerUpdate(data.AuctionId, data.RemainingSeconds);
+        }
+      });
+
+    // Genel açık arttırma durum değişiklikleri
+    this.hubService.auctionStatusChanged$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(data => {
+        if (data) {
+          this.handleStatusChanged(data.AuctionId, data.Status);
         }
       });
   }
@@ -136,24 +192,94 @@ export class AuctionComponent implements OnInit, OnDestroy {
   }
 
   private updateAuctionInList(updatedAuction: AuctionDto): void {
-    const index = this.auctions.findIndex(a => a.id === updatedAuction.id);
-    if (index !== -1) {
-      this.auctions[index] = updatedAuction;
-    }
+    this.ngZone.run(() => {
+      const index = this.auctions.findIndex(a => a.id === updatedAuction.id);
+      if (index !== -1) {
+        this.auctions[index] = updatedAuction;
+        console.log('✅ Auction listesi güncellendi:', updatedAuction.title);
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   private handleNewBid(auctionId: string, bidAmount: number): void {
-    const auction = this.auctions.find(a => a.id === auctionId);
-    if (auction) {
-      auction.currentPrice = bidAmount;
-      auction.totalBids++;
-    }
+    this.ngZone.run(() => {
+      const auction = this.auctions.find(a => a.id === auctionId);
+      if (auction) {
+        auction.currentPrice = bidAmount;
+        auction.totalBids++;
+        console.log('✅ Auction listesi güncellendi - Yeni bid:', bidAmount);
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   private handleAuctionEnded(auctionId: string): void {
+    this.ngZone.run(() => {
+      const auction = this.auctions.find(a => a.id === auctionId);
+      if (auction) {
+        auction.status = AuctionStatus.Completed;
+        console.log(`🏁 Açık arttırma bitti: ${auctionId}`);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private handleTimeExtended(auctionId: string, newEndTime: string): void {
+    this.ngZone.run(() => {
+      const auction = this.auctions.find(a => a.id === auctionId);
+      if (auction) {
+        auction.endTime = new Date(newEndTime);
+        console.log(`⏰ Açık arttırma süresi uzatıldı: ${auctionId}`);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private handleAuctionStarted(auctionId: string): void {
+    this.ngZone.run(() => {
+      const auction = this.auctions.find(a => a.id === auctionId);
+      if (auction) {
+        auction.status = AuctionStatus.Active;
+        console.log(`🎯 Açık arttırma başladı: ${auctionId}`);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private handleAuctionApproved(auctionId: string): void {
+    this.ngZone.run(() => {
+      // Yeni onaylanan açık arttırma - listeyi yenile
+      console.log(`✅ Yeni açık arttırma onaylandı: ${auctionId}`);
+      this.loadAuctions();
+    });
+  }
+
+  private handleAuctionCancelled(auctionId: string): void {
+    this.ngZone.run(() => {
+      const auction = this.auctions.find(a => a.id === auctionId);
+      if (auction) {
+        auction.status = AuctionStatus.Cancelled;
+        console.log(`❌ Açık arttırma iptal edildi: ${auctionId}`);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private handleTimerUpdate(auctionId: string, remainingSeconds: number): void {
+    // Timer güncellemelerini UI'da gösterebiliriz
+    // Şu anda sadece console'a yazdırıyoruz
+    if (remainingSeconds % 30 === 0) { // Her 30 saniyede bir log
+      console.log(`⏰ Timer güncelleme: ${auctionId} - ${remainingSeconds} saniye kaldı`);
+    }
+  }
+
+  private handleStatusChanged(auctionId: string, status: string): void {
     const auction = this.auctions.find(a => a.id === auctionId);
     if (auction) {
-      auction.status = AuctionStatus.Completed;
+      console.log(`📊 Açık arttırma durumu değişti: ${auctionId} -> ${status}`);
+      // Status'u enum'a çevirebiliriz
+      this.loadAuctions(); // Güvenli seçenek: listeyi yenile
     }
   }
 
