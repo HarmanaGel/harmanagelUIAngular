@@ -75,6 +75,7 @@ register(userData: RegisterRequest): Observable<any> {
   body.set('username', userData.email);
   body.set('password', userData.password);
   body.set('scope', environment.oauth.scope);
+  body.set('client_secret', environment.oauth.secret);
 
   // Önce kullanıcı kaydetme isteği yap (ABP'nin register endpoint'i)
   const registerData = {
@@ -121,6 +122,7 @@ register(userData: RegisterRequest): Observable<any> {
     body.set('username', credentials.email);
     body.set('password', credentials.password);
     body.set('scope', environment.oauth.scope);
+    body.set('client_secret', environment.oauth.secret);
 
     return this.http.post<any>(`${environment.oauth.issuer}/connect/token`, body.toString(), {
       headers: {
@@ -181,7 +183,6 @@ register(userData: RegisterRequest): Observable<any> {
         return false;
       }
     }
-
     return false;
   }
 
